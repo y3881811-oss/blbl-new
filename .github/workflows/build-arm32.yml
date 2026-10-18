@@ -1,7 +1,7 @@
 name: Build and Release ARM32 APK
 
 on:
-  workflow_dispatch: # 允许手动触发
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -24,7 +24,12 @@ jobs:
         with:
           packages: 'platforms;android-36 build-tools;36.0.0'
 
-      # 直接编译（Gradle 会自动下载匹配的 protoc）
+      # 👇 核心步骤：从 Secrets 提取 Base64 并还原成 jks 文件 👇
+      - name: Restore Keystore
+        run: |
+          mkdir -p keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore/mtfm.jks
+
       - name: Build Release APK
         run: ./gradlew assembleRelease
 
