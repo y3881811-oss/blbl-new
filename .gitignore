@@ -3,7 +3,7 @@
 build/
 local.properties
 **/build/
-
+*.jks
 # IntelliJ / Android Studio
 .idea/
 *.iml
