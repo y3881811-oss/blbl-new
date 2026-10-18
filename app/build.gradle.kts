@@ -27,26 +27,30 @@ android {
             useSupportLibrary = true
         }
 
-        // 👇 新增：限制为 32 位 armeabi-v7a 👇
+        // 👇 锁死 32 位 👇
         ndk {
             abiFilters += "armeabi-v7a"
         }
     }
 
-    // 👇 修改：套用你之前的固定签名配置 👇
+    // 👇 安全版签名配置：全部从环境变量读取 👇
     signingConfigs {
         create("release") {
-            storeFile = rootProject.file("keystore/release.keystore") // 请确保你的签名文件路径和名字是这个
-            storePassword = propOrEnv("RELEASE_STORE_PASSWORD") ?: "mtfm123456" // 加了默认密码
-            keyAlias = propOrEnv("RELEASE_KEY_ALIAS") ?: "mtfm" // 加了默认别名
-            keyPassword = propOrEnv("RELEASE_KEY_PASSWORD") ?: "mtfm123456" // 加了默认密码
+            storeFile = rootProject.file("keystore/mtfm.jks")
+            // 这里的变量名和 YAML 里注入的环境变量名对应
+            storePassword = propOrEnv("RELEASE_STORE_PASSWORD")
+            keyAlias = propOrEnv("RELEASE_KEY_ALIAS")
+            keyPassword = propOrEnv("RELEASE_KEY_PASSWORD")
         }
     }
 
     buildTypes {
         debug {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release") // Debug 也用固定签名
+            // 如果本地调试没有配置环境变量，Debug 可以忽略签名报错
+            if (propOrEnv("RELEASE_STORE_PASSWORD") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         release {
             isMinifyEnabled = true
@@ -87,7 +91,7 @@ android {
     }
 }
 
-// 👇 保持原样，千万不要删 👇
+// 原版 Protobuf 配置
 protobuf {
     protoc {
         artifact = "com.google.protobuf:protoc:3.25.3"
