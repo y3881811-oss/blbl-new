@@ -24,13 +24,13 @@ jobs:
         with:
           packages: 'platforms;android-36 build-tools;36.0.0'
 
-      # 从 Secrets 还原签名文件
+      # 从 Secrets 还原签名文件（用完即毁）
       - name: Restore Keystore
         run: |
           mkdir -p keystore
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore/mtfm.jks
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore/new_key.jks
 
-      # 👇 安全注入：将 GitHub Secrets 转为环境变量供 Gradle 读取 👇
+      # 通过环境变量注入，不留在代码库中
       - name: Build Release APK
         env:
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
