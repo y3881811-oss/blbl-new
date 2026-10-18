@@ -2,10 +2,9 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.protobuf")
-    // 注意：不要加 compose 相关的插件
 }
 
-// 👇 提取你的签名变量配置 👇
+// 👇 你的签名变量配置 👇
 val storePass: String = System.getenv("KEYSTORE_PASSWORD") ?: "mtfm123456"
 val aliasName: String = System.getenv("KEY_ALIAS") ?: "mtfm"
 val keyPass: String = System.getenv("KEY_PASSWORD") ?: "mtfm123456"
@@ -24,18 +23,18 @@ android {
 
     defaultConfig {
         applicationId = "blbl.cat3399"
-        minSdk = 21 // 保持原项目的 21
+        minSdk = 21 
         targetSdk = 36
         versionCode = (propOrEnv("versionCode") ?: "1").toInt()
         versionName = propOrEnv("versionName") ?: "1.0.0"
 
-        // 👇 注意：由于是 512MB 电视，建议只保留 armeabi-v7a，去掉 arm64-v8a 减小体积 👇
+        // 👇 锁死 32 位 👇
         ndk {
             abiFilters += "armeabi-v7a"
         }
     }
 
-    // 👇 加入你的固定签名配置 👇
+    // 👇 绑定你的固定签名 👇
     signingConfigs {
         create("mtfm") {
             storeFile = rootProject.file("keystore/mtfm.jks")
@@ -47,7 +46,6 @@ android {
 
     buildTypes {
         getByName("debug") {
-            // Debug 也用固定签名，方便电视覆盖安装
             signingConfig = signingConfigs.getByName("mtfm")
         }
         getByName("release") {
@@ -57,7 +55,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("mtfm") // 绑定签名
+            signingConfig = signingConfigs.getByName("mtfm")
         }
     }
 
@@ -85,6 +83,11 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-    
-    // 注意：不要加 buildFeatures { compose = true }
+}
+
+// 👇 核心救命配置：强制让 Gradle 下载匹配版本的 protoc 👇
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.21.12"
+    }
 }
