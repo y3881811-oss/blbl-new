@@ -20,15 +20,6 @@ jobs:
         with:
           packages: 'platforms;android-36 build-tools;36.0.0'
 
-      - name: Lock ABI to armeabi-v7a
-        run: |
-          # 在 app/build.gradle.kts 中强制只保留 32 位 ARM
-          sed -i '/ndk {/,/}/ s/abiFilters.*$/abiFilters += listOf("armeabi-v7a")/' app/build.gradle.kts
-          # 如果没有 ndk 块，追加一个
-          if ! grep -q "abiFilters" app/build.gradle.kts; then
-            sed -i '/defaultConfig {/a\        ndk { abiFilters += listOf("armeabi-v7a") }' app/build.gradle.kts
-          fi
-
       - name: Build Debug APK
         run: ./gradlew assembleDebug -PversionName=0.1.30
 
