@@ -1,8 +1,9 @@
 name: Build and Release ARM32 APK
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # 允许手动触发
 
+# 必须赋予写入权限，否则无法创建 Release
 permissions:
   contents: write
 
@@ -24,19 +25,35 @@ jobs:
         with:
           packages: 'platforms;android-36 build-tools;36.0.0'
 
-      # 因为有了默认密码兜底，直接打包 Release 即可
+      # 👇 解决 protoc 找不到的问题 👇
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # 编译 Release 包（已在 Gradle 中配置好固定签名）
       - name: Build Release APK
         run: ./gradlew assembleRelease
 
+      # 获取当前日期，格式如：2026-10-18
       - name: Get Current Date
         id: date
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
 
+      # 按日期发布 Release
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          # Tag 名称，为了防止同一天多次编译冲突，加了运行编号（如 v2026-10-18-1）
           tag_name: v${{ steps.date.outputs.date }}-${{ github.run_number }}
+          # 发行版的标题
           name: Release ${{ steps.date.outputs.date }} (Build ${{ github.run_number }})
+          # 发行版的说明
+          body: |
+            自动构建的 32位(armeabi-v7a) 正式签名版 APK。
+            - 构建日期：${{ steps.date.outputs.date }}
+            - 运行编号：${{ github.run_number }}
           draft: false
           prerelease: false
+          # 上传 Release 目录下的 APK
           files: app/build/outputs/apk/release/*.apk
