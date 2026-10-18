@@ -1,0 +1,14 @@
+name: Generate Keystore
+on: workflow_dispatch
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Keystore and Print Base64
+        run: |
+          keytool -genkeypair -v -keystore mtfm.jks -alias mtfm -keyalg RSA -keysize 2048 -validity 10000 -storepass mtfm123456 -keypass mtfm123456 -dname "CN=Android, OU=Android, O=Android, L=Android, S=Android, C=US"
+          echo "=============== 请复制下面的代码 ==============="
+          base64 -w 0 mtfm.jks
+          echo ""
+          echo "================================================"
