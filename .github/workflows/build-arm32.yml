@@ -24,13 +24,18 @@ jobs:
         with:
           packages: 'platforms;android-36 build-tools;36.0.0'
 
-      # 👇 核心步骤：从 Secrets 提取 Base64 并还原成 jks 文件 👇
+      # 从 Secrets 还原签名文件
       - name: Restore Keystore
         run: |
           mkdir -p keystore
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore/mtfm.jks
 
+      # 👇 安全注入：将 GitHub Secrets 转为环境变量供 Gradle 读取 👇
       - name: Build Release APK
+        env:
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
       - name: Get Current Date
