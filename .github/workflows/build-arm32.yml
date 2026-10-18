@@ -25,10 +25,11 @@ jobs:
         with:
           packages: 'platforms;android-36 build-tools;36.0.0'
 
-      # 👇 解决 protoc 找不到的问题 👇
+      # 👇 关键修改：指定使用 21.x 版本的 protoc，解决新老版本不兼容问题 👇
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
         with:
+          version: "21.x" 
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       # 编译 Release 包（已在 Gradle 中配置好固定签名）
