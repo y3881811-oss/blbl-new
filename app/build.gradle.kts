@@ -4,6 +4,19 @@ plugins {
     id("com.google.protobuf")
 }
 
+// 👇 开源标准：读取本地私有配置（local.properties 不会上传到 GitHub） 👇
+import java.util.Properties
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
+
+// 优先找 local.properties，其次找环境变量（GitHub Actions）
+fun getSigningValue(key: String): String? {
+    return localProperties.getProperty(key) ?: System.getenv(key)
+}
+
 android {
     namespace = "blbl.cat3399"
     compileSdk = 36
@@ -27,28 +40,28 @@ android {
             useSupportLibrary = true
         }
 
-        // 👇 锁死 32 位 👇
+        // 锁死 32 位
         ndk {
             abiFilters += "armeabi-v7a"
         }
     }
 
-    // 👇 安全版签名配置：全部从环境变量读取 👇
     signingConfigs {
         create("release") {
-            storeFile = rootProject.file("keystore/mtfm.jks")
-            // 这里的变量名和 YAML 里注入的环境变量名对应
-            storePassword = propOrEnv("RELEASE_STORE_PASSWORD")
-            keyAlias = propOrEnv("RELEASE_KEY_ALIAS")
-            keyPassword = propOrEnv("RELEASE_KEY_PASSWORD")
+            // 这里写死文件名，因为这是公开的，不涉及密码
+            storeFile = rootProject.file("keystore/new_key.jks") 
+            
+            // 密码全部通过 getSigningValue 动态读取，代码里绝对没有明文
+            storePassword = getSigningValue("RELEASE_STORE_PASSWORD")
+            keyAlias = getSigningValue("RELEASE_KEY_ALIAS")
+            keyPassword = getSigningValue("RELEASE_KEY_PASSWORD")
         }
     }
 
     buildTypes {
         debug {
             isMinifyEnabled = false
-            // 如果本地调试没有配置环境变量，Debug 可以忽略签名报错
-            if (propOrEnv("RELEASE_STORE_PASSWORD") != null) {
+            if (getSigningValue("RELEASE_STORE_PASSWORD") != null) {
                 signingConfig = signingConfigs.getByName("release")
             }
         }
@@ -91,7 +104,6 @@ android {
     }
 }
 
-// 原版 Protobuf 配置
 protobuf {
     protoc {
         artifact = "com.google.protobuf:protoc:3.25.3"
