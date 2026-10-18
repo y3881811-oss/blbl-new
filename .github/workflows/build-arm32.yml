@@ -1,13 +1,17 @@
-name: Build ARM32 Debug APK
+name: Build and Release ARM32 APK
 
 on:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -20,11 +24,19 @@ jobs:
         with:
           packages: 'platforms;android-36 build-tools;36.0.0'
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug -PversionName=0.1.30
+      # 因为有了默认密码兜底，直接打包 Release 即可
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - name: Get Current Date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: blbl-arm32-debug
-          path: app/build/outputs/apk/debug/*.apk
+          tag_name: v${{ steps.date.outputs.date }}-${{ github.run_number }}
+          name: Release ${{ steps.date.outputs.date }} (Build ${{ github.run_number }})
+          draft: false
+          prerelease: false
+          files: app/build/outputs/apk/release/*.apk
